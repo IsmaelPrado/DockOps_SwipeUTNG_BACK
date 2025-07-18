@@ -9,14 +9,19 @@ require('dotenv').config();
 const authRoutes = require('./routes/auth.routes');
 
 // ** Módulos
-const db = require('./models');
+const { db } = require('./models/index');
 const logger = require('./config/log/logger');
+const createDatabase = require('./config/database/createDatabase');
+const validateRequestBody = require('./middlewares/validateRequestBody')
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 
 app.use(cors());
 app.use(express.json());
+
+//VALIDACIÓN DE BODY PARA TODAS LAS PETICIONES POST/PUT/PATCH
+app.use(validateRequestBody);
 
 app.use('/api', authRoutes);
 
@@ -29,15 +34,17 @@ app.get('/', (req, res) => {
 (async () => {
   try {
     // --- CREACIÓN DE BASE DE DATOS Y TABLAS DINÁMICAMENTE
-    await db.sequelize.sync({ alter: true });
+    await createDatabase();
+
+    await db.sync({ alter: true });
     logger.info('¡BASE DE DATOS CONECTADA!');
 
     app.listen(PORT, () => {
-      logger.info('SERVIDOR CORRIENDO EN ', process.env.DB_HOST,':',process.env.PORT);
+      logger.info(`SERVIDOR CORRIENDO EN ${process.env.DB_HOST}:${PORT}`);
     });
   } catch (error) {
     logger.error('ERROR AL CONECTAR LA BASE DE DATOS => ', error);
   }
  
-})
+})();
 
