@@ -6,3 +6,4 @@
 4. cors 
 5. dotenv
 6. winston
+7. joi
