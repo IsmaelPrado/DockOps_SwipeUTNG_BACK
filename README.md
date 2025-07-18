@@ -7,3 +7,5 @@
 5. dotenv
 6. winston
 7. joi
+8. Jest
+9. Supertest
