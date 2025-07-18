@@ -39,5 +39,10 @@ module.exports = (sequelize, DataTypes) => {
     timestamps: false // porque ya defines tú mismo created_at
   });
 
+  User.associate = (models) => {
+    User.hasMany(models.Swipe, { foreignKey: 'swiper_id', as: 'swipesMade' });
+    User.hasMany(models.Swipe, { foreignKey: 'swiped_id', as: 'swipesReceived' });
+  };
+
   return User;
 };
