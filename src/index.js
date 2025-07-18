@@ -4,6 +4,9 @@ require('dotenv').config();
 // ** Paquetes npm instalados
 const express = require('express');
 const cors = require('cors');
+require('dotenv').config();
+
+const authRoutes = require('./routes/auth.routes');
 
 // ** Módulos
 const db = require('./models');
@@ -15,8 +18,10 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
+app.use('/api', authRoutes);
+
 app.get('/', (req, res) => {
-  res.json({ message: 'Swipe UTNG BACKEND en ejecución!' });
+  res.json({ message: 'SwipeUTNG backend funcionando 💘🎓' });
 });
 
 // --- CONFIGURACIÓN DEL SERVIDOR
