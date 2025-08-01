@@ -1,51 +1,49 @@
-// ** Variables de entorno
+// index.js
 require('dotenv').config();
 
-// ** Paquetes npm instalados
 const express = require('express');
 const cors = require('cors');
-require('dotenv').config();
 
+// Rutas
 const authRoutes = require('./routes/auth.routes');
+const matchRoutes = require('./routes/match.routes'); // 🔥 Importante
 
-// ** Módulos
+// Módulos personalizados
 const { db } = require('./models/index');
 const logger = require('./config/log/logger');
 const createDatabase = require('./config/database/createDatabase');
-const validateRequestBody = require('./middlewares/validateRequestBody')
+const validateRequestBody = require('./middlewares/validateRequestBody');
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3000;
 
+// Middlewares
 app.use(cors());
 app.use(express.json());
+app.use(validateRequestBody); // Ahora es seguro gracias a la corrección
 
-//VALIDACIÓN DE BODY PARA TODAS LAS PETICIONES POST/PUT/PATCH
-app.use(validateRequestBody);
-
+// Rutas API
 app.use('/api', authRoutes);
+app.use('/api', matchRoutes); // 🔥 Asegúrate de que esta línea exista
 
+// Ruta de prueba
 app.get('/', (req, res) => {
   res.json({ message: 'SwipeUTNG backend funcionando 💘🎓' });
 });
 
-// --- CONFIGURACIÓN DEL SERVIDOR
-
+// Servidor y conexión a BD
 (async () => {
   try {
-    // --- CREACIÓN DE BASE DE DATOS Y TABLAS DINÁMICAMENTE
     await createDatabase();
-
     await db.sync({ alter: true });
     logger.info('¡BASE DE DATOS CONECTADA!');
 
     app.listen(PORT, () => {
-      logger.info(`SERVIDOR CORRIENDO EN ${process.env.DB_HOST}:${PORT}`);
+      logger.info(`SERVIDOR CORRIENDO EN http://localhost:${PORT}`);
     });
   } catch (error) {
     logger.error('ERROR AL CONECTAR LA BASE DE DATOS => ', error);
   }
- 
 })();
 
-module.exports = app; // PARA PRUEBAS UNITARIAS
+module.exports = app;
