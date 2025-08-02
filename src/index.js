@@ -3,6 +3,17 @@ const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
 
+
+// ** Rutas
+const authRoutes = require('./routes/auth.routes');
+const swipeRoutes = require('./routes/swipe.routes');
+
+// ** Módulos
+const { db } = require('./models/index');
+const logger = require('./config/log/logger');
+const createDatabase = require('./config/database/createDatabase');
+const validateRequestBody = require('./middlewares/validateRequestBody')
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -18,6 +29,7 @@ const userRoutes = require('./routes/users.routes');
 app.use('/api', authRoutes);
 app.use('/api', matchRoutes);
 app.use('/api', userRoutes);
+app.use('/api/swipe', swipeRoutes);
 
 // Ruta de prueba (base)
 app.get('/', (req, res) => {
