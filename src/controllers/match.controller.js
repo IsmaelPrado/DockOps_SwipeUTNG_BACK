@@ -1,54 +1,26 @@
 // controllers/match.controller.js
-const { QueryTypes } = require('sequelize');
-const { db } = require('../models/index');
+const { Match, User } = require('../models');
 
-async function getMutualMatches(req, res) {
-  const userId = parseInt(req.params.userId, 10);
-
-  if (!userId || isNaN(userId)) {
-    return res.status(400).json({
-      success: false,
-      message: 'ID de usuario inválido. Debe ser un número.',
-    });
-  }
-
+const getMutualMatches = async (req, res) => {
+  const { userId } = req.params;
   try {
-    const query = `
-      SELECT u.id, u.name, u.age, u.career, u.gender
-      FROM users u
-      INNER JOIN matches m1 ON u.id = m1.user_id
-      INNER JOIN matches m2 ON m2.user_id = :userId AND m2.matched_user_id = u.id
-      WHERE m1.matched_user_id = :userId;
-    `;
-
-    const matchedUsers = await db.query(query, {
-      type: QueryTypes.SELECT,
-      replacements: { userId },
+    const matches = await Match.findAll({
+      where: { user_id: userId },
+      include: [
+        {
+          model: User,
+          as: 'matchedUser',
+          attributes: ['id', 'name', 'email', 'career', 'age', 'gender'],
+        },
+      ],
     });
 
-    // Formatear respuesta para el frontend
-    const matches = matchedUsers.map(user => ({
-      id: user.id,
-      matchedUser: {
-        id: user.id,
-        name: user.name,
-        age: user.age,
-        career: user.career,
-        gender: user.gender,
-        photos: [] // Puedes llenarlo cuando tengas fotos
-      }
-    }));
-
-    return res.status(200).json(matches);
-
+    const mutualMatches = matches.map(match => match.matchedUser);
+    res.json(mutualMatches);
   } catch (error) {
     console.error('Error en getMutualMatches:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Error interno del servidor',
-      error: error.message
-    });
+    res.status(500).json({ message: 'Error al obtener los matches mutuos' });
   }
-}
+};
 
 module.exports = { getMutualMatches };

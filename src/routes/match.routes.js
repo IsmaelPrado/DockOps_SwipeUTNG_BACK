@@ -3,7 +3,7 @@ const express = require('express');
 const router = express.Router();
 const { getMutualMatches } = require('../controllers/match.controller');
 
-// Ruta: GET /api/matches/mutual/:userId
+// Ruta corregida:
 router.get('/matches/mutual/:userId', getMutualMatches);
 
 module.exports = router;

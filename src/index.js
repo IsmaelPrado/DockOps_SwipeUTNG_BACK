@@ -1,18 +1,7 @@
 // index.js
-require('dotenv').config();
-
 const express = require('express');
 const cors = require('cors');
-
-// Rutas
-const authRoutes = require('./routes/auth.routes');
-const matchRoutes = require('./routes/match.routes'); // 🔥 Importante
-
-// Módulos personalizados
-const { db } = require('./models/index');
-const logger = require('./config/log/logger');
-const createDatabase = require('./config/database/createDatabase');
-const validateRequestBody = require('./middlewares/validateRequestBody');
+require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -20,30 +9,42 @@ const PORT = process.env.PORT || 3000;
 // Middlewares
 app.use(cors());
 app.use(express.json());
-app.use(validateRequestBody); // Ahora es seguro gracias a la corrección
 
-// Rutas API
+// Rutas
+const authRoutes = require('./routes/auth.routes');
+const matchRoutes = require('./routes/match.routes');
+const userRoutes = require('./routes/users.routes');
+
 app.use('/api', authRoutes);
-app.use('/api', matchRoutes); // 🔥 Asegúrate de que esta línea exista
+app.use('/api', matchRoutes);
+app.use('/api', userRoutes);
 
-// Ruta de prueba
+// Ruta de prueba (base)
 app.get('/', (req, res) => {
   res.json({ message: 'SwipeUTNG backend funcionando 💘🎓' });
 });
 
-// Servidor y conexión a BD
+// Base de datos y servidor
+const { db } = require('./models');
+const logger = require('./config/log/logger');
+const createDatabase = require('./config/database/createDatabase');
+
 (async () => {
   try {
+    // Crear base de datos si no existe
     await createDatabase();
-    await db.sync({ alter: true });
-    logger.info('¡BASE DE DATOS CONECTADA!');
 
+    // Sincronizar modelos (puedes cambiar alter:true por force:true si necesitas reset)
+    await db.sync({ alter: true });
+    logger.info('✅ ¡BASE DE DATOS CONECTADA!');
+
+    // Iniciar servidor
     app.listen(PORT, () => {
-      logger.info(`SERVIDOR CORRIENDO EN http://localhost:${PORT}`);
+      logger.info(`🚀 SERVIDOR CORRIENDO EN http://localhost:${PORT}`);
     });
+
   } catch (error) {
-    logger.error('ERROR AL CONECTAR LA BASE DE DATOS => ', error);
+    logger.error('❌ ERROR AL CONECTAR LA BASE DE DATOS => ', error);
+    process.exit(1); // Salir con error si falla la DB
   }
 })();
-
-module.exports = app;
