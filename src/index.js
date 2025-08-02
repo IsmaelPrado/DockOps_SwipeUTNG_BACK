@@ -48,3 +48,10 @@ const createDatabase = require('./config/database/createDatabase');
     process.exit(1); // Salir con error si falla la DB
   }
 })();
+
+
+
+
+
+
+
