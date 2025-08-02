@@ -1,116 +1,116 @@
-    const bcrypt = require('bcryptjs');
-    const { generateToken } = require('../services/jwt.service');
-    const { createUser, findUserByEmail } = require('../models/users/user.model');
-    const { registerUserSchema, loginUserSchema } = require('../schemas/user.schema');
 
-    const apiResponse  = require('../utils/response')
+const { User } = require('../models');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 
-    // REGISTRO DE USUARIO
-    async function register (req, res)  {
-      const { error } = registerUserSchema.validate(req.body);
-      if (error) {
-        return res.status(400).json(apiResponse({
-          success: false,
-          message: `Datos inválidos: ${error.details[0].message}`
-        }));
-      }
-
-      const { name, email, password, career, age, gender } = req.body;
-
-      try {
-        const existingUser = await findUserByEmail(email);
-        if (existingUser) {
-          return res.status(400).json(apiResponse({
-            success: false,
-            message: 'El correo ya está registrado'
-          }));
-        }
-
-        const hashedPassword = await bcrypt.hash(password, 10);
-        const user = await createUser({ name, email, password: hashedPassword, career, age, gender });
-
-        return res.status(201).json(apiResponse({
-          success: true,
-          message: 'Usuario registrado con éxito',
-          data: {
-            id: user.id,
-            name,
-            email,
-            career,
-            age,
-            gender
-          }
-        }));
-      } catch (err) {
-        return res.status(500).json(apiResponse({
-          success: false,
-          message: 'Error al registrar usuario',
-          data: err.message
-        }));
-      }
-    };
-
-    // LOGIN DE USUARIO
-    async function login (req, res) {
-      const { error } = loginUserSchema.validate(req.body);
-      if (error) {
-        return res.status(400).json(apiResponse({
-          success: false,
-          message: 'Datos inválidos',
-          data: error.details[0].message
-        }));
-      }
-
-      const { email, password } = req.body;
-
-      try {
-        const user = await findUserByEmail(email);
-        if (!user) {
-          return res.status(404).json(apiResponse({
-            success: false,
-            message: 'Usuario no encontrado'
-          }));
-        }
-
-        const valid = await bcrypt.compare(password, user.password);
-        if (!valid) {
-          return res.status(401).json(apiResponse({
-            success: false,
-            message: 'Contraseña incorrecta'
-          }));
-        }
-
-        const token = generateToken(user);
-        return res.status(200).json(apiResponse({
-          success: true,
-          message: 'Login exitoso',
-          data: {
-            token,
-            user: {
-              id: user.id,
-              name: user.name,
-              email: user.email,
-              career: user.career,
-              age: user.age,
-              gender: user.gender
-            }
-          }
-        }));
-      } catch (err) {
-        return res.status(500).json(apiResponse({
-          success: false,
-          message: 'Error al hacer login',
-          data: err.message
-        }));
-      }
-    };
-
-
-    // EXPORTACIONES
-    module.exports = {
-      //REGISTRO DE USUARIOS
-      register,
-
-      //LOGIN
-      login
+const register = async (req, res) => {
+  const { name, email, password, career, age, gender } = req.body;
+  try {
+    const existingUser = await User.findOne({ where: { email } });
+    if (existingUser) {
+      return res.status(400).json({ message: 'El correo ya está registrado' });
     }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const user = await User.create({
+      name,
+      email,
+      password: hashedPassword,
+      career,
+      age,
+      gender,
+    });
+
+    console.log('Usuario creado:', user);
+
+    if (!process.env.JWT_SECRET) {
+      console.error('JWT_SECRET no está definido');
+      return res.status(500).json({ message: 'Error de configuración del servidor' });
+    }
+
+    const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+    res.status(201).json({
+      message: 'Usuario registrado con éxito',
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        career: user.career,
+        age: user.age,
+        gender: user.gender,
+      },
+    });
+  } catch (error) {
+    console.error('Error en register:', error);
+    res.status(500).json({ message: 'Error al registrar el usuario' });
+  }
+};
+
+const login = async (req, res) => {
+  const { email, password } = req.body;
+  try {
+    if (!process.env.JWT_SECRET) {
+      console.error('JWT_SECRET no está definido');
+      return res.status(500).json({ message: 'Error de configuración del servidor' });
+    }
+
+    const user = await User.findOne({ where: { email } });
+
+    if (!user) {
+      console.log('Usuario no encontrado con email:', email);
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+
+    console.log('Usuario encontrado:', user);
+
+    const match = await bcrypt.compare(password, user.password);
+    if (!match) {
+      console.log('Contraseña incorrecta para usuario:', email);
+      return res.status(401).json({ message: 'Contraseña incorrecta' });
+    }
+
+    const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+    res.json({
+      message: 'Inicio de sesión exitoso',
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        career: user.career,
+        age: user.age,
+        gender: user.gender,
+      },
+    });
+  } catch (error) {
+    console.error('Error en login:', error);
+    res.status(500).json({ message: 'Error al iniciar sesión' });
+  }
+};
+
+
+const getMe = async (req, res) => {
+  try {
+    const user = await User.findByPk(req.user.id);
+    if (!user) return res.status(404).json({ message: 'Usuario no encontrado' });
+
+    res.json({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      career: user.career,
+      age: user.age,
+      gender: user.gender,
+    });
+  } catch (error) {
+    console.error('Error en getMe:', error);
+    res.status(500).json({ message: 'Error al obtener el usuario' });
+  }
+};
+
+module.exports = { register, login, getMe };
+

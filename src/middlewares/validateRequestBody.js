@@ -1,3 +1,4 @@
+
 function validateRequestBody(req, res, next) {
   const methodsThatRequireBody = ['POST', 'PUT', 'PATCH'];
 
@@ -12,6 +13,6 @@ function validateRequestBody(req, res, next) {
   }
 
   next();
-}
+};
 
 module.exports = validateRequestBody;

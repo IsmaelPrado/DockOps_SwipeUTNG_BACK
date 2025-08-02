@@ -6,7 +6,6 @@ async function createUser({ name, email, password, career, age, gender, photos }
 }
 
 
-
 async function findUserByEmail(email) {
   const user = await User.findOne({
     where: { email },
