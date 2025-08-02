@@ -5,7 +5,9 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 
+// ** Rutas
 const authRoutes = require('./routes/auth.routes');
+const swipeRoutes = require('./routes/swipe.routes');
 
 // ** Módulos
 const { db } = require('./models/index');
@@ -26,6 +28,7 @@ app.use(express.urlencoded({ limit: '10mb', extended: true }));
 app.use(validateRequestBody);
 
 app.use('/api', authRoutes);
+app.use('/api/swipe', swipeRoutes);
 
 app.get('/', (req, res) => {
   res.json({ message: 'SwipeUTNG backend funcionando 💘🎓' });
