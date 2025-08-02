@@ -1,4 +1,4 @@
-// Cambié UserTable por User para que coincida con la exportación del modelo
+
 const { User } = require('../models');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
@@ -92,6 +92,7 @@ const login = async (req, res) => {
   }
 };
 
+
 const getMe = async (req, res) => {
   try {
     const user = await User.findByPk(req.user.id);
@@ -112,3 +113,4 @@ const getMe = async (req, res) => {
 };
 
 module.exports = { register, login, getMe };
+

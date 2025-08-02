@@ -1,7 +1,7 @@
 const { db, User } = require('../index')
 
-async function createUser({ name, email, password, career, age, gender }) {
-  const newUser = await User.create({ name, email, password, career, age, gender });
+async function createUser({ name, email, password, career, age, gender, photos }) {
+  const newUser = await UserTable.create({ name, email, password, career, age, gender, photos });
   return newUser;
 }
 
@@ -9,7 +9,7 @@ async function createUser({ name, email, password, career, age, gender }) {
 async function findUserByEmail(email) {
   const user = await User.findOne({
     where: { email },
-    attributes: ['name', 'email', 'password', 'career', 'age', 'gender']
+    attributes: ['name', 'email', 'password', 'career', 'age', 'gender', 'photos']
   });
   return user;
 }
