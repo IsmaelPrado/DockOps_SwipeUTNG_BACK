@@ -33,11 +33,22 @@ module.exports = (sequelize, DataTypes) => {
     created_at: {
       type: DataTypes.DATE,
       defaultValue: DataTypes.NOW
-    }
+    },
+    photos: {
+  type: DataTypes.JSON,
+  allowNull: false,
+  defaultValue: []
+}
+
   }, {
     tableName: 'users',
     timestamps: false // porque ya defines tú mismo created_at
   });
+
+  User.associate = (models) => {
+    User.hasMany(models.Swipe, { foreignKey: 'swiper_id', as: 'swipesMade' });
+    User.hasMany(models.Swipe, { foreignKey: 'swiped_id', as: 'swipesReceived' });
+  };
 
   return User;
 };

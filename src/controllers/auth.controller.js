@@ -1,116 +1,146 @@
-const bcrypt = require('bcryptjs');
-const { generateToken } = require('../services/jwt.service');
-const { createUser, findUserByEmail } = require('../models/users/user.model');
-const { registerUserSchema, loginUserSchema } = require('../schemas/user.schema');
 
-const apiResponse  = require('../utils/response')
+const { User } = require('../models');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const getBase64SizeInMB = require('../models/users/user.model').getBase64SizeInMB;
+const { registerUserSchema } = require('../schemas/user.schema');
 
-// REGISTRO DE USUARIO
-async function register (req, res)  {
+// Para validar tamaño de las imágenes
+const MAX_IMAGE_MB = 2;
+
+const register = async (req, res) => {
   const { error } = registerUserSchema.validate(req.body);
-  if (error) {
-    return res.status(400).json(apiResponse({
-      success: false,
-      message: `Datos inválidos: ${error.details[0].message}`
-    }));
+   if (error) {
+    const messages = error.details.map((err) => err.message);
+    return res.status(400).json({
+      message: 'Datos inválidos',
+      errors: messages, // Enviar todos los errores encontrados
+    });
   }
-
-  const { name, email, password, career, age, gender } = req.body;
+  const { name, email, password, career, age, gender, photos } = req.body;
 
   try {
-    const existingUser = await findUserByEmail(email);
+    // Validar tamaño de las fotos
+    for (const photo of photos) {
+      const sizeInMB = getBase64SizeInMB(photo);
+      if (sizeInMB > MAX_IMAGE_MB) {
+        return res.status(400).json({ message: `Cada foto debe ser menor a ${MAX_IMAGE_MB} MB` });
+      }
+    }
+    const existingUser = await User.findOne({ where: { email } });
     if (existingUser) {
-      return res.status(400).json(apiResponse({
-        success: false,
-        message: 'El correo ya está registrado'
-      }));
+      return res.status(400).json({ 
+        message: 'Datos inválidos',
+        errors: ['Ya existe un usuario con este correo electrónico']
+      });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = await createUser({ name, email, password: hashedPassword, career, age, gender });
 
-    return res.status(201).json(apiResponse({
-      success: true,
+    const user = await User.create({
+      name,
+      email,
+      password: hashedPassword,
+      career,
+      age,
+      gender,
+      photos: photos || [] 
+    });
+
+    console.log('Usuario creado:', user);
+
+    if (!process.env.JWT_SECRET) {
+      console.error('JWT_SECRET no está definido');
+      return res.status(500).json({ message: 'Error de configuración del servidor' });
+    }
+
+    const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+    res.status(201).json({
       message: 'Usuario registrado con éxito',
-      data: {
+      token,
+      user: {
         id: user.id,
-        name,
-        email,
-        career,
-        age,
-        gender
-      }
-    }));
-  } catch (err) {
-    return res.status(500).json(apiResponse({
-      success: false,
-      message: 'Error al registrar usuario',
-      data: err.message
-    }));
+        name: user.name,
+        email: user.email,
+        career: user.career,
+        age: user.age,
+        gender: user.gender,
+        photos: user.photos,
+      },
+    });
+  } catch (error) {
+    console.error('Error en register:', error);
+    res.status(500).json({ message: 'Error al registrar el usuario' });
   }
 };
 
-// LOGIN DE USUARIO
-async function login (req, res) {
-  const { error } = loginUserSchema.validate(req.body);
-  if (error) {
-    return res.status(400).json(apiResponse({
-      success: false,
-      message: 'Datos inválidos',
-      data: error.details[0].message
-    }));
-  }
-
+const login = async (req, res) => {
   const { email, password } = req.body;
-
   try {
-    const user = await findUserByEmail(email);
+    if (!process.env.JWT_SECRET) {
+      console.error('JWT_SECRET no está definido');
+      return res.status(500).json({ message: 'Error de configuración del servidor' });
+    }
+
+    const user = await User.findOne({ where: { email } });
+
     if (!user) {
-      return res.status(404).json(apiResponse({
-        success: false,
-        message: 'Usuario no encontrado'
-      }));
+      console.log('Usuario no encontrado con email:', email);
+      return res.status(404).json({ message: 'Usuario no encontrado' });
     }
 
-    const valid = await bcrypt.compare(password, user.password);
-    if (!valid) {
-      return res.status(401).json(apiResponse({
-        success: false,
-        message: 'Contraseña incorrecta'
-      }));
+    console.log('Usuario encontrado:', user);
+
+    const match = await bcrypt.compare(password, user.password);
+    if (!match) {
+      console.log('Contraseña incorrecta para usuario:', email);
+      return res.status(401).json({ message: 'Contraseña incorrecta' });
     }
 
-    const token = generateToken(user);
-    return res.status(200).json(apiResponse({
-      success: true,
-      message: 'Login exitoso',
-      data: {
-        token,
-        user: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          career: user.career,
-          age: user.age,
-          gender: user.gender
-        }
-      }
-    }));
-  } catch (err) {
-    return res.status(500).json(apiResponse({
-      success: false,
-      message: 'Error al hacer login',
-      data: err.message
-    }));
+    const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+    res.json({
+      message: 'Inicio de sesión exitoso',
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        career: user.career,
+        age: user.age,
+        gender: user.gender,
+        photos: user.photos,
+      },
+    });
+  } catch (error) {
+    console.error('Error en login:', error);
+    res.status(500).json({ message: 'Error al iniciar sesión' });
   }
 };
 
 
-// EXPORTACIONES
-module.exports = {
-  //REGISTRO DE USUARIOS
-  register,
+const getMe = async (req, res) => {
+  try {
+    const user = await User.findByPk(req.user.id);
+    if (!user) return res.status(404).json({ message: 'Usuario no encontrado' });
 
-  //LOGIN
-  login
-}
+    res.json({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      career: user.career,
+      age: user.age,
+      gender: user.gender,
+      photos: user.photos,
+    });
+  } catch (error) {
+    console.error('Error en getMe:', error);
+    res.status(500).json({ message: 'Error al obtener el usuario' });
+  }
+};
+
+
+
+module.exports = { register, login, getMe };
+
