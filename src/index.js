@@ -6,6 +6,8 @@ const cors = require('cors');
 // ** Rutas
 const authRoutes = require('./routes/auth.routes');
 const swipeRoutes = require('./routes/swipe.routes');
+const matchRoutes = require('./routes/match.routes');
+const userRoutes = require('./routes/users.routes');
 
 // ** Módulos
 const { db } = require('./models/index');
@@ -23,11 +25,6 @@ app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
-// Rutas
-const authRoutes = require('./routes/auth.routes');
-const matchRoutes = require('./routes/match.routes');
-const userRoutes = require('./routes/users.routes');
-
 app.use('/api', authRoutes);
 app.use('/api', matchRoutes);
 app.use('/api', userRoutes);
@@ -39,10 +36,6 @@ app.get('/', (req, res) => {
   res.json({ message: 'SwipeUTNG backend funcionando 💘🎓' });
 });
 
-// Base de datos y servidor
-const { db } = require('./models');
-const logger = require('./config/log/logger');
-const createDatabase = require('./config/database/createDatabase');
 
 (async () => {
   try {

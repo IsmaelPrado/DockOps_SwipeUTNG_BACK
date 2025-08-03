@@ -1,5 +1,24 @@
 const { User } = require('../models');
 
+// Obtener perfil de usuario por token
+const getUserProfile = async (req, res) => {
+  const userId = req.user.id; // Asumiendo que el ID del usuario está
+  try {
+    const user = await User.findByPk(userId, {
+      attributes: ['id', 'name', 'email', 'career', 'age', 'gender', 'photos'],
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+
+    res.json(user);
+  } catch (error) {
+    console.error('Error al obtener perfil de usuario:', error);
+    res.status(500).json({ message: 'Error al obtener perfil de usuario' });
+  }
+};
+
 // Obtener todos los usuarios
 const getUsuarios = async (req, res) => {
   try {
@@ -35,4 +54,5 @@ const getUsuariosPorCarrera = async (req, res) => {
 module.exports = {
   getUsuarios,
   getUsuariosPorCarrera,
+  getUserProfile
 };

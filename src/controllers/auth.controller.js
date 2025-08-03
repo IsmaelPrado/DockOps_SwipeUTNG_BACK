@@ -2,13 +2,37 @@
 const { User } = require('../models');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const getBase64SizeInMB = require('../models/users/user.model').getBase64SizeInMB;
+const { registerUserSchema } = require('../schemas/user.schema');
+
+// Para validar tamaño de las imágenes
+const MAX_IMAGE_MB = 2;
 
 const register = async (req, res) => {
-  const { name, email, password, career, age, gender } = req.body;
+  const { error } = registerUserSchema.validate(req.body);
+   if (error) {
+    const messages = error.details.map((err) => err.message);
+    return res.status(400).json({
+      message: 'Datos inválidos',
+      errors: messages, // Enviar todos los errores encontrados
+    });
+  }
+  const { name, email, password, career, age, gender, photos } = req.body;
+
   try {
+    // Validar tamaño de las fotos
+    for (const photo of photos) {
+      const sizeInMB = getBase64SizeInMB(photo);
+      if (sizeInMB > MAX_IMAGE_MB) {
+        return res.status(400).json({ message: `Cada foto debe ser menor a ${MAX_IMAGE_MB} MB` });
+      }
+    }
     const existingUser = await User.findOne({ where: { email } });
     if (existingUser) {
-      return res.status(400).json({ message: 'El correo ya está registrado' });
+      return res.status(400).json({ 
+        message: 'Datos inválidos',
+        errors: ['Ya existe un usuario con este correo electrónico']
+      });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -20,6 +44,7 @@ const register = async (req, res) => {
       career,
       age,
       gender,
+      photos: photos || [] 
     });
 
     console.log('Usuario creado:', user);
@@ -41,6 +66,7 @@ const register = async (req, res) => {
         career: user.career,
         age: user.age,
         gender: user.gender,
+        photos: user.photos,
       },
     });
   } catch (error) {
@@ -84,6 +110,7 @@ const login = async (req, res) => {
         career: user.career,
         age: user.age,
         gender: user.gender,
+        photos: user.photos,
       },
     });
   } catch (error) {
@@ -105,12 +132,15 @@ const getMe = async (req, res) => {
       career: user.career,
       age: user.age,
       gender: user.gender,
+      photos: user.photos,
     });
   } catch (error) {
     console.error('Error en getMe:', error);
     res.status(500).json({ message: 'Error al obtener el usuario' });
   }
 };
+
+
 
 module.exports = { register, login, getMe };
 

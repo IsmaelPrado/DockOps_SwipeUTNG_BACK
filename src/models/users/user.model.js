@@ -14,7 +14,15 @@ async function findUserByEmail(email) {
   return user;
 }
 
+function getBase64SizeInMB(base64String) {
+  const base64Data = base64String.split(',')[1]; // quita el encabezado
+  const sizeInBytes = (base64Data.length * 3) / 4; // fórmula para base64
+  return sizeInBytes / (1024 * 1024); // en MB
+}
+
+
 module.exports = {
   createUser,
-  findUserByEmail
+  findUserByEmail,
+  getBase64SizeInMB
 };
