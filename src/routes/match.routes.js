@@ -2,8 +2,10 @@
 const express = require('express');
 const router = express.Router();
 const { getMutualMatches } = require('../controllers/match.controller');
+const authenticateToken = require('../middlewares/authenticateToken');
 
 // Ruta corregida:
-router.get('/matches/mutual/:userId', getMutualMatches);
+//Usar el token para identificar al usuario
+router.get('/matches/mutual', authenticateToken, getMutualMatches);
 
 module.exports = router;
