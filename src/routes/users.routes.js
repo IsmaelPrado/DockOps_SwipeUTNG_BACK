@@ -1,7 +1,7 @@
 // routes/users.routes.js
 const express = require('express');
 const router = express.Router();
-const { getUsuarios, getUsuariosPorCarrera, getUserProfile } = require('../controllers/user.controller');
+const { getUsuarios, getUsuariosPorCarrera, getUserProfile, getUsuariosConFiltros } = require('../controllers/user.controller');
 const authenticateToken = require('../middlewares/authenticateToken');
 
 // Ruta para obtener todos los usuarios
@@ -13,4 +13,7 @@ router.get('/usuarios/carrera/:carrera', authenticateToken, getUsuariosPorCarrer
 // Ruta para obtener el perfil del usuario autenticado
 router.get('/usuarios/me', authenticateToken, getUserProfile);
 
+
+// Ruta para obtener usuario con filtros
+router.get('/usuarios/filtros', authenticateToken, getUsuariosConFiltros);
 module.exports = router;
