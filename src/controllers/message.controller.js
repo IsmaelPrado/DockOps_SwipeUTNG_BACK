@@ -3,7 +3,7 @@ const { createMessage, getMessagesByMatchId } = require('../models/messages/mess
 const createMessageController = async (req, res) => {
   try {
     const { match_id, text } = req.body;
-    const sender_id = req.user.id; // Obtener id del usuario autenticado
+    const sender_id = req.userId; // Obtener id del usuario autenticado
 
     const newMessage = await createMessage({ match_id, sender_id, text });
     res.status(201).json(newMessage);
