@@ -122,10 +122,48 @@ const getUsuariosConFiltros = async (req, res) => {
   }
 };
 
+// Actualizar perfil de usuario por token
+const updateUserProfile = async (req, res) => {
+  const userId = req.userId;
+
+  const {
+    name,
+    email,
+    career,
+    age,
+    gender,
+    photos
+  } = req.body;
+
+  try {
+    const user = await User.findByPk(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+
+    // Actualizamos solo los campos permitidos
+    user.name = name ?? user.name;
+    user.email = email ?? user.email;
+    user.career = career ?? user.career;
+    user.age = age ?? user.age;
+    user.gender = gender ?? user.gender;
+    user.photos = photos ?? user.photos;
+
+    await user.save();
+
+    res.json({ message: 'Perfil actualizado correctamente', user });
+  } catch (error) {
+    console.error('Error al actualizar perfil de usuario:', error);
+    res.status(500).json({ message: 'Error al actualizar perfil de usuario' });
+  }
+};
+
 
 module.exports = {
   getUsuarios,
   getUsuariosPorCarrera,
   getUserProfile,
-  getUsuariosConFiltros
+  getUsuariosConFiltros,
+  updateUserProfile
 };
