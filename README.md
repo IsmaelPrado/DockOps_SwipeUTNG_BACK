@@ -18,7 +18,7 @@ Permite a los usuarios registrarse, hacer "swipes" (like/dislike) y crear "match
 ## 📦 Paquetes instalados con `npm`
 
 ```bash
-npm install pg sequelize express cors dotenv winston joi jest supertest
+npm install pg sequelize express cors dotenv winston joi jest supertest socket.io
 ```
 
 | Paquete       | Descripción                                              |
@@ -32,6 +32,7 @@ npm install pg sequelize express cors dotenv winston joi jest supertest
 | `joi`         | Validación de datos del lado del servidor                |
 | `jest`        | Framework de pruebas unitarias                           |
 | `supertest`   | Testing para endpoints HTTP con Express                  |
+| `socket.io`   | Comunicación en tiempo real entre cliente y servidor (chat) |
 
 ---
 
@@ -93,6 +94,26 @@ CREATE TABLE matches (
 
 > Registra un match entre dos usuarios que **se dieron like mutuamente**.  
 > El `CHECK (user1_id < user2_id)` evita duplicados como (3,5) y (5,3).
+
+---
+
+### Tabla: `messages`
+
+```sql
+CREATE TABLE messages (
+  id SERIAL PRIMARY KEY,
+  match_id INT NOT NULL,         -- a qué match (chat) pertenece el mensaje
+  sender_id INT NOT NULL,        -- quién envió el mensaje
+  text TEXT NOT NULL,            -- contenido del mensaje
+  timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (match_id) REFERENCES matches(id),
+  FOREIGN KEY (sender_id) REFERENCES users(id)
+);
+```
+
+> Guarda los mensajes entre dos usuarios que han hecho match previamente.
+> Permite identificar qué usuario envió el mensaje (sender_id) y a qué conversación      pertenece (match_id).
+> El campo timestamp garantiza que los mensajes se ordenen cronológicamente.
 
 ---
 
