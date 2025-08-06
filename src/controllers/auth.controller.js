@@ -122,7 +122,7 @@ const login = async (req, res) => {
 
 const getMe = async (req, res) => {
   try {
-    const user = await User.findByPk(req.user.id);
+    const user = await User.findByPk(req.userId);
     if (!user) return res.status(404).json({ message: 'Usuario no encontrado' });
 
     res.json({

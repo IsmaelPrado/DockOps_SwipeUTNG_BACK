@@ -38,9 +38,9 @@ async function createSwipeController(req, res) {
     }
 
     // Usar el método del modelo
-    const { swipe, created } = await createSwipe(swiper_id, swiped_id, is_like);
+    const {swipe, match}= await createSwipe({swiper_id, swiped_id, is_like});
 
-    if (!created) {
+    if (!swipe) {
       return res.status(409).json(apiResponse({
         success: false,
         message: 'Ya hiciste swipe a este usuario',
@@ -49,10 +49,10 @@ async function createSwipeController(req, res) {
     }
 
     return res.status(201).json(apiResponse({
-      success: true,
-      message: 'Swipe creado correctamente',
-      data: swipe
-    }));
+  success: true,
+  message: match ? '¡Swipe y match creado!' : 'Swipe creado correctamente',
+  data: { swipe, match }
+}));
 
   } catch (err) {
     console.error(err);
