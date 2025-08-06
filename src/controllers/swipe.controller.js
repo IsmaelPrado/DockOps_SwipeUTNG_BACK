@@ -17,45 +17,48 @@ async function createSwipeController(req, res) {
   const { swiper_id, swiped_id, is_like } = req.body;
 
   try {
-    // Validar que los usuarios existen
-    const swiper = await User.findByPk(swiper_id);
-    const swiped = await User.findByPk(swiped_id);
-
-    if (!swiper || !swiped) {
-      return res.status(404).json(apiResponse({
-        success: false,
-        message: 'Uno o ambos usuarios no existen',
-        data: null
-      }));
-    }
-
-    if (swiper_id === swiped_id) {
-      return res.status(400).json(apiResponse({
-        success: false,
-        message: 'No puedes hacer swipe a ti mismo',
-        data: null
-      }));
-    }
-
-    // Usar el método del modelo
-    const {swipe, match}= await createSwipe({swiper_id, swiped_id, is_like});
-
-    if (!swipe) {
-      return res.status(409).json(apiResponse({
-        success: false,
-        message: 'Ya hiciste swipe a este usuario',
-        data: null
-      }));
-    }
+    const { swipe, match } = await createSwipe({ swiper_id, swiped_id, is_like });
 
     return res.status(201).json(apiResponse({
-  success: true,
-  message: match ? '¡Swipe y match creado!' : 'Swipe creado correctamente',
-  data: { swipe, match }
-}));
+      success: true,
+      message: match ? '¡Swipe y match creado!' : 'Swipe creado correctamente',
+      data: { swipe, match }
+    }));
 
   } catch (err) {
-    console.error(err);
+    console.error('Error en createSwipeController:', err);
+
+    // Captura errores personalizados lanzados en createSwipe
+    const errorMessage = err.message;
+
+    if (
+      errorMessage === `Usuario con id ${swiper_id} no existe` ||
+      errorMessage === `Usuario con id ${swiped_id} no existe`
+    ) {
+      return res.status(404).json(apiResponse({
+        success: false,
+        message: errorMessage,
+        data: null
+      }));
+    }
+
+    if (errorMessage === 'No puedes hacer swipe a ti mismo') {
+      return res.status(400).json(apiResponse({
+        success: false,
+        message: errorMessage,
+        data: null
+      }));
+    }
+
+    if (errorMessage === 'Ya hiciste swipe a este usuario') {
+      return res.status(409).json(apiResponse({
+        success: false,
+        message: errorMessage,
+        data: null
+      }));
+    }
+
+    // Otros errores inesperados
     return res.status(500).json(apiResponse({
       success: false,
       message: 'Error interno del servidor',
@@ -63,6 +66,7 @@ async function createSwipeController(req, res) {
     }));
   }
 }
+
 
 // Obtener swipes hechos por usuario usando método del modelo
 async function getSwipesByUserController(req, res) {

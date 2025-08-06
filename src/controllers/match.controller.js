@@ -15,7 +15,7 @@ const getMutualMatches = async (req, res) => {
         {
           model: User,
           as: "matchedUser",
-          attributes: ["id", "name", "email", "career", "age", "gender"],
+          attributes: ["id", "name", "email", "career", "age", "gender", "photos"],
         },
       ],
     });
@@ -33,13 +33,23 @@ const getMutualMatches = async (req, res) => {
           matchedUser = match.matchedUser;
         } else {
           matchedUser = await User.findByPk(match.user_id, {
-            attributes: ["id", "name", "email", "career", "age", "gender"],
+            attributes: ["id", "name", "email", "career", "age", "gender", "photos"],
           });
         }
 
+        const firstPhoto = matchedUser.photos?.[0] || null;
+
         return {
           matchId: match.id, // aquí agregas el ID del match
-          user: matchedUser, // info del otro usuario
+          user: {
+            id: matchedUser.id,
+            name: matchedUser.name,
+            email: matchedUser.email,
+            career: matchedUser.career,
+            age: matchedUser.age,
+            gender: matchedUser.gender,
+            photos: firstPhoto
+          }, // info del otro usuario
         };
       })
     );
