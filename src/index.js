@@ -2,12 +2,17 @@
 const express = require('express');
 const cors = require('cors');
 
+// Socket.IO y HTTP
+const http = require('http');                   
+const { Server } = require('socket.io');        
+const socketHandler = require('./sockets/socketHandler'); 
 
 // ** Rutas
 const authRoutes = require('./routes/auth.routes');
 const swipeRoutes = require('./routes/swipe.routes');
 const matchRoutes = require('./routes/match.routes');
 const userRoutes = require('./routes/users.routes');
+const messageRoutes = require('./routes/message.routes');
 
 // ** Módulos
 const { db } = require('./models/index');
@@ -28,14 +33,27 @@ app.use(express.urlencoded({ limit: '10mb', extended: true }));
 app.use('/api', authRoutes);
 app.use('/api', matchRoutes);
 app.use('/api', userRoutes);
-
 app.use('/api/swipe', swipeRoutes);
+app.use('/api', messageRoutes);
 
 // Ruta de prueba (base)
 app.get('/', (req, res) => {
   res.json({ message: 'SwipeUTNG backend funcionando 💘🎓' });
 });
 
+// Crear servidor HTTP a partir de Express
+const server = http.createServer(app);
+
+// Crear instancia de Socket.IO con configuración CORS
+const io = new Server(server, {
+  cors: {
+    origin: '*',          // Ajusta el origin a tu frontend en producción
+    methods: ['GET', 'POST'],
+  },
+});
+
+// Inicializar el manejador de sockets (socketHandler.js)
+socketHandler(io);
 
 (async () => {
   try {
@@ -47,7 +65,7 @@ app.get('/', (req, res) => {
     logger.info('✅ ¡BASE DE DATOS CONECTADA!');
 
     // Iniciar servidor
-    app.listen(PORT, () => {
+    server.listen(PORT, () => {
       logger.info(`🚀 SERVIDOR CORRIENDO EN http://localhost:${PORT}`);
     });
 
@@ -56,10 +74,3 @@ app.get('/', (req, res) => {
     process.exit(1); // Salir con error si falla la DB
   }
 })();
-
-
-
-
-
-
-
