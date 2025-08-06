@@ -13,7 +13,7 @@ async function getMessagesByMatchId(match_id) {
       {
         model: User,
         as: 'sender',
-        attributes: ['id', 'name', 'photos']
+        attributes: ['id', 'name']
       }
     ]
   });

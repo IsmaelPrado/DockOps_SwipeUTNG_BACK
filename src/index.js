@@ -23,6 +23,7 @@ const validateRequestBody = require('./middlewares/validateRequestBody')
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+
 // Middlewares
 app.use(cors());
 
@@ -47,7 +48,7 @@ const server = http.createServer(app);
 // Crear instancia de Socket.IO con configuración CORS
 const io = new Server(server, {
   cors: {
-    origin: '*',          // Ajusta el origin a tu frontend en producción
+    origin: '*',          
     methods: ['GET', 'POST'],
   },
 });
