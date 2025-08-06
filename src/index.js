@@ -21,7 +21,7 @@ const createDatabase = require('./config/database/createDatabase');
 const validateRequestBody = require('./middlewares/validateRequestBody')
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8080;
 
 
 // Middlewares
